@@ -32,10 +32,8 @@ class ORM(object):
         # Configuration of subsequent database connections.
         self.engine = engine
         # Reflect info from the new database connection.
-        if self.def_refl:
-          self.Base.prepare(self.engine)
-        else:
-          self.Base.metadata.create_all(self.engine)
+        if self.def_refl: self.Base.prepare(self.engine)
+        else: self.Base.metadata.create_all(self.engine)
         # New sesison factory, this time bound to the new engine. Now any
         # sessions we make will also be bound to the engine.
         self.session_factory = sessionmaker(self.engine)
@@ -118,8 +116,20 @@ class ORM(object):
             # Assume "engine" is an SQLAlchemy engine.
             self.configure_with_engine(engine)
 
+        # Convenience monkeypatch for displaying ORM objects.
+        def monkey_repr(self):
+            attr_dict = self.__dict__.copy()
+            attr_dict.pop("_sa_instance_state", None)
+            return "<{name}: {attr_dict}>".format(name=self.__class__.__name__, attr_dict=attr_dict)
+        self.Base.__repr__ = monkey_repr
+
     def create_session(self):
         '''Creates and returns an SQLAlchemy database session for this ORM.'''
         return self.session_factory()
 
+    # Convenient access to session.
+    @property
+    def session(self):
+        if not hasattr(self, "_session"): self._session = self.create_session()
+        return self._session
 

@@ -39,9 +39,8 @@ class TestORM(unittest.TestCase):
         '''
         user = orm.User(name = u"Name", fullname = u"Full Name")
         address = orm.Address(email = u"full.name@domain.com", user = user)
-        session = orm.create_session()
-        session.add_all([user, address])
-        session.commit()
+        orm.session.add_all([user, address])
+        orm.session.commit()
         self.assertTrue(address in user.addresses)
 
     def test_orm(self):
