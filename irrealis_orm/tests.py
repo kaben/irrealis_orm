@@ -9,16 +9,6 @@ class TestORM(unittest.TestCase):
         Creates a test SQLAlchemy database engine with a simple in-memory
         SQLite database.
         '''
-        self.orm_defs = dict(
-          User = dict(
-            __tablename__ = 'users',
-            addresses = relationship("Address"),
-          ),
-          Address = dict(
-            __tablename__ = 'addresses',
-            user = relationship("User"),
-          ),
-        )
         self.metadata = MetaData()
         Table('users', self.metadata,
           Column('id', Integer, primary_key = True),
@@ -32,6 +22,23 @@ class TestORM(unittest.TestCase):
         )
         self.engine = create_engine('sqlite:///:memory:')
         self.metadata.create_all(self.engine)
+
+        # The ORM definition assumes the database tables are defined, but most
+        # column information will be found by inspecting the database.
+        #
+        # Relationships must still be stated explicitly -- probably because the
+        # SQLAlchemy designers found relationships hard to infer in certain
+        # cases (see the TestManyToManySelf case below for an example of this).
+        self.orm_defs = dict(
+          User = dict(
+            __tablename__ = 'users',
+            addresses = relationship("Address"),
+          ),
+          Address = dict(
+            __tablename__ = 'addresses',
+            user = relationship("User"),
+          ),
+        )
     
     def exercise_orm(self, orm):
         '''
