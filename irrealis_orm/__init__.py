@@ -1,4 +1,7 @@
-'''Tool to setup SQLAlchemy object relational mappings.'''
+'''
+Tool to quickly setup SQLAlchemy object relation mappings that uses reflection
+to autoload table information from existing databases.
+'''
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base, DeferredReflection
