@@ -23,8 +23,9 @@ class TestORM(unittest.TestCase):
         self.engine = create_engine('sqlite:///:memory:')
         self.metadata.create_all(self.engine)
 
-        # The ORM definition assumes the database tables are defined, but most
-        # column information will be found by inspecting the database.
+        # The ORM definition assumes the database tables are defined, and when
+        # the ORM is constructed most column information will be found by
+        # inspecting the database.
         #
         # Relationships must still be stated explicitly -- probably because the
         # SQLAlchemy designers found relationships hard to infer in certain
