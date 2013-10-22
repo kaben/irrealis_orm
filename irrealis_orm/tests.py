@@ -114,8 +114,8 @@ class TestManyToManySelf(unittest.TestCase):
 
         # Second, assuming the database tables are already setup for the
         # relationship, ask SQLAlchemy to autoload the tables; but we still
-        # must tell SQLAlchemy separately how to construction the relationship
-        # for the ORM.
+        # must tell SQLAlchemy separately how to construct the relationship for
+        # the ORM.
         orm_defs = dict(
           ThingAssociation = dict(
             __tablename__ = "things_association",
