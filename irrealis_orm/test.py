@@ -59,4 +59,24 @@ class TestORM(unittest.TestCase):
         orm = ORM(self.orm_defs, self.engine)
         self.exercise_orm(orm)
 
+    def test_nonreflected_orm_with_defs_and_url(self):
+        orm_defs = dict(
+          User = dict(
+            __tablename__ = 'users',
+            id = Column('id', Integer, primary_key = True),
+            name = Column('name', Text),
+            fullname = Column('fullname', Text),
+            addresses = relationship("Address"),
+          ),
+          Address = dict(
+            __tablename__ = 'addresses',
+            id = Column('id', Integer, primary_key = True),
+            user_id = Column('user_id', None, ForeignKey('users.id')),
+            email = Column('email', Text, nullable = False),
+            user = relationship("User"),
+          ),
+        )
+        orm = ORM(orm_defs, 'sqlite:///:memory:', deferred_reflection = False)
+        self.exercise_orm(orm)
+
 if __name__ == "__main__": unittest.main()

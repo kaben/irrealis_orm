@@ -29,7 +29,10 @@ class ORM(object):
         # Configuration of subsequent database connections.
         self.engine = engine
         # Reflect info from the new database connection.
-        self.Base.prepare(self.engine)
+        if self.def_refl:
+          self.Base.prepare(self.engine)
+        else:
+          self.Base.metadata.create_all(self.engine)
         # New sesison factory, this time bound to the new engine. Now any
         # sessions we make will also be bound to the engine.
         self.session_factory = sessionmaker(self.engine)
@@ -42,7 +45,7 @@ class ORM(object):
         # Configuration of subsequent database connections.
         self.configure_with_engine(create_engine(url))
 
-    def __init__(self, orm_defs = None, engine = None):
+    def __init__(self, orm_defs = None, engine = None, deferred_reflection = True):
         '''
         Creates and maps the ORM classes specified in orm_defs.  If SQLAlchemy
         database url/engine is given, loads database table info into ORM.
@@ -98,7 +101,8 @@ class ORM(object):
         # Prep SQLAlchemy reflection with new SQLAlchemy declarative Base,
         # discarding any existing Base, engine, and session factory. Reflection
         # may be deferred if engine isn't specified.
-        self.Base = declarative_base(cls=DeferredReflection)
+        self.def_refl = deferred_reflection
+        self.Base = declarative_base(cls=DeferredReflection if self.def_refl else object)
         # Create mapped classes if given.
         if orm_defs is None: orm_defs = dict() # Empty dict.
         self.create_mapped_classes(orm_defs)
