@@ -78,4 +78,77 @@ class TestORM(unittest.TestCase):
         orm = ORM(orm_defs, 'sqlite:///:memory:', deferred_reflection = False)
         self.exercise_orm(orm)
 
+
+class TestManyToManySelf(unittest.TestCase):
+    def test_demo_self_referential_many_to_many_relationship(self):
+        '''
+        Demo setup and use of self-referential many-to-many relationship
+        
+        A self-referential many-to-many relationship is one of the more
+        complicated things one might have to do when constructing relational
+        mappings. Setup is similar, but less-complicated, for other kinds of
+        relationships:
+        - Many-to-many (non-self-referential)
+        - Many-to-one or one-to-many (self-referential or non-self-referential)
+        - One-to-one (self-referential or non-self-referential)
+
+        Since their setup is similar, this demo should help you with all of the
+        above situations.
+        '''
+
+        # First, setup the database tables.
+        metadata = MetaData()
+        Table("things", metadata,
+          Column("id", Integer, primary_key=True),
+          Column("name", Text),
+        )
+        # An association table is needed for many-to-many relationships, but
+        # isn't usually necessary for other kinds of relationships.
+        Table("things_association", metadata,
+          Column("id", Integer, primary_key=True),
+          Column("parent_id", Integer, ForeignKey("things.id")),
+          Column("child_id", Integer, ForeignKey("things.id")),
+        )
+        engine = create_engine('sqlite:///:memory:')
+        metadata.create_all(engine)
+
+        # Second, assuming the database tables are already setup for the
+        # relationship, ask SQLAlchemy to autoload the tables; but we still
+        # must tell SQLAlchemy separately how to construction the relationship
+        # for the ORM.
+        orm_defs = dict(
+          ThingAssociation = dict(
+            __tablename__ = "things_association",
+          ),
+          Thing = dict(
+            __tablename__ = "things",
+            children = relationship(
+              "Thing",
+              secondary = "things_association",
+              primaryjoin = "things.c.id==things_association.c.parent_id",
+              secondaryjoin = "things.c.id==things_association.c.child_id",
+              backref="parents",
+            ),
+          ),
+        )
+        orm = ORM(orm_defs, engine)
+
+        # Now make and connect parents/children.
+        parent1 = orm.Thing(name = u"Parent1")
+        parent2 = orm.Thing(name = u"Parent2")
+        child = orm.Thing(name = u"Child")
+        parent1.children.append(child)
+        child.parents.append(parent2)
+
+        # Commit to the database.
+        orm.session.add_all([parent1, parent2, child])
+        orm.session.commit()
+
+        # Verify relationships.
+        self.assertTrue(child in parent1.children)
+        self.assertTrue(child in parent2.children)
+        self.assertTrue(parent1 in child.parents)
+        self.assertTrue(parent2 in child.parents)
+
+
 if __name__ == "__main__": unittest.main()
