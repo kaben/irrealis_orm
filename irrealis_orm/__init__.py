@@ -9,7 +9,7 @@ from sqlalchemy.ext.declarative import declarative_base, DeferredReflection
 class ORM(object):
     '''Sets up SQLAlchemy object relational mappings.'''
 
-    def __create_mapped_class(self, name, Base, dct):
+    def __mapped_class(self, name, Base, dct):
         '''
         Creates class of given name, inheriting from Base, with attributes
         defined in dct. Attaches class to this ORM instance as attributes with
