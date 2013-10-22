@@ -21,9 +21,7 @@ class ORM(object):
         '''
         Creates and maps the ORM classes specified in orm_defs.
         '''
-        # Create ORM classes to be mapped.
-        for name, dct in orm_defs.iteritems():
-            self.__create_mapped_class(name, self.Base, dct)
+        for name, dct in orm_defs.iteritems(): self.__mapped_class(name, self.Base, dct)
 
     def configure_with_engine(self, engine):
         '''
@@ -109,13 +107,9 @@ class ORM(object):
         self.create_mapped_classes(orm_defs)
         # Create or configure engine if given.
         if engine is not None:
-          if type(engine) in (str, unicode):
-            # Assume "engine" is an SQLAlchemy url.
-            self.create_engine(engine)
-          else:
-            # Assume "engine" is an SQLAlchemy engine.
-            self.configure_with_engine(engine)
-
+          # "engine" can be either an SQLAlchemy url, or an SQLAlchemy engine.
+          if type(engine) in (str, unicode): self.create_engine(engine)
+          else: self.configure_with_engine(engine)
         # Convenience monkeypatch for displaying ORM objects.
         def monkey_repr(self):
             attr_dict = self.__dict__.copy()
@@ -127,9 +121,9 @@ class ORM(object):
         '''Creates and returns an SQLAlchemy database session for this ORM.'''
         return self.session_factory()
 
-    # Convenient access to session.
     @property
     def session(self):
+        '''Convenient access to per-ORM session.'''
         if not hasattr(self, "_session"): self._session = self.create_session()
         return self._session
 
