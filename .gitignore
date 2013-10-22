@@ -1,0 +1,14 @@
+# VIM swapfiles.
+*.sw?
+
+# Byte-compiled Python.
+*.py?
+
+# Logs.
+*.log
+
+# Test-coverage reports.
+.coverage
+
+# Python Eggs.
+*.egg-info
