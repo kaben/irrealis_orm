@@ -93,7 +93,7 @@ class TestManyToManySelf(unittest.TestCase):
         Demo setup and use of self-referential many-to-many relationship
         
         A self-referential many-to-many relationship is one of the more
-        complicated things one might have to do when constructing relational
+        complicated things one might try to do when constructing relational
         mappings. Setup is similar, but less-complicated, for other kinds of
         relationships:
         - Many-to-many (non-self-referential)
@@ -144,19 +144,29 @@ class TestManyToManySelf(unittest.TestCase):
         # Now make and connect parents/children.
         parent1 = orm.Thing(name = u"Parent1")
         parent2 = orm.Thing(name = u"Parent2")
-        child = orm.Thing(name = u"Child")
-        parent1.children.append(child)
-        child.parents.append(parent2)
+        child1 = orm.Thing(name = u"Child")
+        child2 = orm.Thing(name = u"Child")
+        # The result should be the same whether we append the child to a
+        # parent's list of children, or append a parent to child's list of
+        # parents.
+        parent1.children.append(child1)
+        parent2.children.append(child1)
+        child2.parents.append(parent1)
+        child2.parents.append(parent2)
 
         # Commit to the database.
-        orm.session.add_all([parent1, parent2, child])
+        orm.session.add_all([parent1, parent2, child1, child2])
         orm.session.commit()
 
         # Verify relationships.
-        self.assertTrue(child in parent1.children)
-        self.assertTrue(child in parent2.children)
-        self.assertTrue(parent1 in child.parents)
-        self.assertTrue(parent2 in child.parents)
+        self.assertTrue(child1 in parent1.children)
+        self.assertTrue(child2 in parent1.children)
+        self.assertTrue(child1 in parent2.children)
+        self.assertTrue(child2 in parent2.children)
+        self.assertTrue(parent1 in child1.parents)
+        self.assertTrue(parent2 in child1.parents)
+        self.assertTrue(parent1 in child2.parents)
+        self.assertTrue(parent2 in child2.parents)
 
 
 if __name__ == "__main__": unittest.main()
