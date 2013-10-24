@@ -1,8 +1,9 @@
 irrealis_orm
 ============
 
-This is a tool to quickly setup SQLAlchemy object relation mappings that uses
-reflection to autoload table information from existing databases.
+This is a tool to quickly setup SQLAlchemy object relation mappings. It uses
+SQLAlchemy's reflection tools to autoload table information from existing
+databases.
 
 
 Demo usage
