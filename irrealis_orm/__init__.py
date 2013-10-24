@@ -127,3 +127,27 @@ class ORM(object):
         if not hasattr(self, "_session"): self._session = self.create_session()
         return self._session
 
+    def get_or_create(self, mapped_class, **keyword_args):
+        '''
+        Get or create a unique object from the database.
+
+        Use:
+        >>> x = orm.get_or_create(orm.Thing, name="Rumplestiltskin")
+
+        If a unique "Thing" in the database has this "name", the thing is
+        returned.  Otherwise, a unique Thing with is name is created, added to
+        the database, and returned.  Fails if name is common to more than one
+        Thing in the database.
+        '''
+        q = self.session.query(mapped_class)
+        for keyword, argument in keyword_args.iteritems():
+          q = q.filter(getattr(mapped_class, keyword)==argument)
+        if q.count():
+          # If the object is not uniquely specified by the keyword arguments,
+          # this should fail by raising an exception.
+          return q.one()
+        else:
+          unique_object = mapped_class(**keyword_args)
+          self.session.add(unique_object)
+          self.session.commit()
+          return unique_object

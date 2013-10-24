@@ -1,6 +1,8 @@
 from irrealis_orm import ORM
 from sqlalchemy import Table, Column, Integer, Text, MetaData, ForeignKey, create_engine
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm.exc import MultipleResultsFound
+
 import unittest
 
 class TestORM(unittest.TestCase):
@@ -167,6 +169,40 @@ class TestManyToManySelf(unittest.TestCase):
         self.assertTrue(parent2 in child1.parents)
         self.assertTrue(parent1 in child2.parents)
         self.assertTrue(parent2 in child2.parents)
+
+
+class TestGetOrCreateUniquObject(unittest.TestCase):
+    def setUp(self):
+        orm_defs = dict(
+          Thing = dict(
+            __tablename__ = 'thing',
+            id = Column('id', Integer, primary_key = True),
+            name = Column('name', Text),
+          ),
+        )
+        self.orm = ORM(orm_defs, 'sqlite:///:memory:', deferred_reflection = False)
+
+    def test_create_unique(self):
+        self.assertEqual(0, self.orm.session.query(self.orm.Thing).count())
+        thing1 = self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
+        self.assertEqual(1, self.orm.session.query(self.orm.Thing).count())
+        thing2 = self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
+        self.assertEqual(1, self.orm.session.query(self.orm.Thing).count())
+        self.assertEqual(thing1, thing2)
+
+    def test_error_on_nonunique(self):
+        self.assertEqual(0, self.orm.session.query(self.orm.Thing).count())
+        thing1 = self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
+        self.assertEqual(1, self.orm.session.query(self.orm.Thing).count())
+        thing2 = self.orm.Thing(name="Rumplestiltskin")
+        self.orm.session.add(thing2)
+        self.orm.session.commit()
+        self.assertRaises(
+          MultipleResultsFound,
+          self.orm.get_or_create,
+          self.orm.Thing, name="Rumplestiltskin"
+        )
+
 
 
 if __name__ == "__main__": unittest.main()
