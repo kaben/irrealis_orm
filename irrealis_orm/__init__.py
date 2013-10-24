@@ -138,6 +138,8 @@ class ORM(object):
         returned.  Otherwise, a unique Thing with is name is created, added to
         the database, and returned.  Fails if name is common to more than one
         Thing in the database.
+
+        No exception handling here! Do it at a higher level.
         '''
         q = self.session.query(mapped_class)
         for keyword, argument in keyword_args.iteritems():
