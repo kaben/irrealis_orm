@@ -151,5 +151,4 @@ class ORM(object):
         else:
           unique_object = mapped_class(**keyword_args)
           self.session.add(unique_object)
-          self.session.commit()
           return unique_object
