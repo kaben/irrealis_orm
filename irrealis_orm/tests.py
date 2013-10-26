@@ -127,9 +127,6 @@ class TestManyToManySelf(unittest.TestCase):
         # must tell SQLAlchemy separately how to construct the relationship for
         # the ORM.
         orm_defs = dict(
-          ThingAssociation = dict(
-            __tablename__ = "things_association",
-          ),
           Thing = dict(
             __tablename__ = "things",
             children = relationship(
@@ -202,6 +199,27 @@ class TestGetOrCreateUniquObject(unittest.TestCase):
           self.orm.get_or_create,
           self.orm.Thing, name="Rumplestiltskin"
         )
+
+class TestLoadUnmappedTables(unittest.TestCase):
+    def test_unmapped_tables_loaded(self):
+        metadata = MetaData()
+        Table("things", metadata,
+          Column("id", Integer, primary_key=True),
+          Column("name", Text),
+        )
+        Table("more_things", metadata,
+          Column("id", Integer, primary_key=True),
+          Column("name", Text),
+        )
+        engine = create_engine('sqlite:///:memory:')
+        metadata.create_all(engine)
+        orm_defs = dict(
+          Thing = dict(
+            __tablename__ = "things",
+          )
+        )
+        orm = ORM(orm_defs, engine)
+        self.assertTrue(u"more_things" in orm.Base.metadata.tables)
 
 
 

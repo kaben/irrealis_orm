@@ -32,8 +32,13 @@ class ORM(object):
         # Configuration of subsequent database connections.
         self.engine = engine
         # Reflect info from the new database connection.
-        if self.def_refl: self.Base.prepare(self.engine)
-        else: self.Base.metadata.create_all(self.engine)
+        if self.def_refl:
+          self.Base.prepare(self.engine)
+          # In the next step we load, but don't map, any tables that haven't
+          # yet been loaded.
+          self.Base.metadata.reflect(self.engine)
+        else:
+          self.Base.metadata.create_all(self.engine)
         # New sesison factory, this time bound to the new engine. Now any
         # sessions we make will also be bound to the engine.
         self.session_factory = sessionmaker(self.engine)
