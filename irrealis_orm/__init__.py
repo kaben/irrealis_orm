@@ -16,6 +16,8 @@ class ORM(object):
         same name.
         '''
         setattr(self, name, type(name, (Base,), dct))
+        # Save mapped classes for future reference.
+        self.mapped_classes[dct["__tablename__"]] = getattr(self, name)
 
     def create_mapped_classes(self, orm_defs):
         '''
@@ -97,6 +99,7 @@ class ORM(object):
         - http://docs.sqlalchemy.org/en/rel_0_8/extensions/declarative.html
         or see test_orm() defined in this module.
         '''
+        self.mapped_classes = dict()
         # Prep SQLAlchemy reflection with new SQLAlchemy declarative Base,
         # discarding any existing Base, engine, and session factory. Reflection
         # may be deferred if engine isn't specified.
