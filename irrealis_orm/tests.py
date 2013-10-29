@@ -132,8 +132,8 @@ class TestManyToManySelf(unittest.TestCase):
             children = relationship(
               "Thing",
               secondary = "things_association",
-              primaryjoin = "things.c.id==things_association.c.parent_id",
-              secondaryjoin = "things.c.id==things_association.c.child_id",
+              primaryjoin = "Thing.id==things_association.c.parent_id",
+              secondaryjoin = "Thing.id==things_association.c.child_id",
               backref="parents",
             ),
           ),
