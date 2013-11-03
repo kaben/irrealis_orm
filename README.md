@@ -8,7 +8,7 @@ tables to map, what classes to map them to, and how they're related.
 
 
 Demo usage
-=========
+==========
 
 I've placed a commented demo in the "TestManyToManySelf" test case defined in
 "irrealis_orm/tests.py".
