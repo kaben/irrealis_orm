@@ -160,3 +160,10 @@ class ORM(object):
           unique_object = mapped_class(**keyword_args)
           self.session.add(unique_object)
           return unique_object
+
+    def update_object(self, obj, **keyword_args):
+        for key in keyword_args:
+          if not hasattr(obj, key):
+            raise AttributeError("Cannot update object: '{}' ORM objects have no attribute '{}'.".format(obj.__class__.__name__, key))
+        for key, value in keyword_args.iteritems():
+          setattr(obj, key, value)

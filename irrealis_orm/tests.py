@@ -168,7 +168,7 @@ class TestManyToManySelf(unittest.TestCase):
         self.assertTrue(parent2 in child2.parents)
 
 
-class TestGetOrCreateUniquObject(unittest.TestCase):
+class TestGetOrCreateUniqueObject(unittest.TestCase):
     def setUp(self):
         orm_defs = dict(
           Thing = dict(
@@ -194,11 +194,31 @@ class TestGetOrCreateUniquObject(unittest.TestCase):
         thing2 = self.orm.Thing(name="Rumplestiltskin")
         self.orm.session.add(thing2)
         self.orm.session.commit()
-        self.assertRaises(
-          MultipleResultsFound,
-          self.orm.get_or_create,
-          self.orm.Thing, name="Rumplestiltskin"
+        with self.assertRaises(MultipleResultsFound):
+          self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
+
+class TestUpdateObject(unittest.TestCase):
+    def setUp(self):
+        orm_defs = dict(
+          Thing = dict(
+            __tablename__ = 'thing',
+            id = Column('id', Integer, primary_key = True),
+            name = Column('name', Text),
+            attribute = Column('attribute', Text),
+          ),
         )
+        self.orm = ORM(orm_defs, 'sqlite:///:memory:', deferred_reflection = False)
+        self.thing = self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
+
+    def test_update_object(self):
+        self.orm.update_object(self.thing, attribute="Sneakiness")
+        thing2 = self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
+        self.assertEqual(thing2.attribute, "Sneakiness")
+        
+    def test_nonsense_update_raises(self):
+        with self.assertRaises(AttributeError):
+          self.orm.update_object(self.thing, tie_color="Blue")
+        
 
 class TestLoadUnmappedTables(unittest.TestCase):
     def test_unmapped_tables_loaded(self):
