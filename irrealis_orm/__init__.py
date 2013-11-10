@@ -167,3 +167,8 @@ class ORM(object):
             raise AttributeError("Cannot update object: '{}' ORM objects have no attribute '{}'.".format(obj.__class__.__name__, key))
         for key, value in keyword_args.iteritems():
           setattr(obj, key, value)
+
+    def get_or_create_and_update(self, mapped_class, query_dict, update_dict):
+        unique_object = self.get_or_create(mapped_class, **query_dict)
+        self.update_object(unique_object, **update_dict)
+        return unique_object

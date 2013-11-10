@@ -197,6 +197,7 @@ class TestGetOrCreateUniqueObject(unittest.TestCase):
         with self.assertRaises(MultipleResultsFound):
           self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
 
+
 class TestUpdateObject(unittest.TestCase):
     def setUp(self):
         orm_defs = dict(
@@ -219,6 +220,29 @@ class TestUpdateObject(unittest.TestCase):
         with self.assertRaises(AttributeError):
           self.orm.update_object(self.thing, tie_color="Blue")
         
+
+class TestGetOrCreateAndUpdate(unittest.TestCase):
+    def setUp(self):
+        orm_defs = dict(
+          Thing = dict(
+            __tablename__ = 'thing',
+            id = Column('id', Integer, primary_key = True),
+            name = Column('name', Text),
+            attribute = Column('attribute', Text),
+          ),
+        )
+        self.orm = ORM(orm_defs, 'sqlite:///:memory:', deferred_reflection = False)
+
+    def test_get_or_create_and_update(self):
+        query_dict = dict(name="Rumplestiltskin")
+        update_dict_1 = dict(attribute="Sneakiness")
+        update_dict_2 = dict(attribute="Meanness")
+        thing_1 = self.orm.get_or_create_and_update(self.orm.Thing, query_dict, update_dict_1)
+        self.assertEqual(thing_1.attribute, "Sneakiness")
+        thing_2 = self.orm.get_or_create_and_update(self.orm.Thing, query_dict, update_dict_2)
+        self.assertEqual(thing_2.attribute, "Meanness")
+        self.assertEqual(thing_1, thing_2)
+
 
 class TestLoadUnmappedTables(unittest.TestCase):
     def test_unmapped_tables_loaded(self):
