@@ -162,6 +162,13 @@ class ORM(object):
           return unique_object
 
     def update_object(self, obj, **keyword_args):
+        '''
+        Update an object using keyword arguments.
+
+        Use:
+        >>> x = orm.get_or_create(orm.Thing, name="Rumplestiltskin")
+        >>> orm.update_object(x, attribute="Sneakiness")
+        '''
         for key in keyword_args:
           if not hasattr(obj, key):
             raise AttributeError("Cannot update object: '{}' ORM objects have no attribute '{}'.".format(obj.__class__.__name__, key))
@@ -169,6 +176,12 @@ class ORM(object):
           setattr(obj, key, value)
 
     def get_or_create_and_update(self, mapped_class, query_dict, update_dict):
+        '''
+        Get or create unique object with attributes from query_dict, and update with attributes from update_dict.
+
+        Use:
+        >>> x = orm.get_or_create_and_update(orm.Thing, dict(name="Rumplestiltskin"), dict(attribute="Sneakiness"))
+        '''
         unique_object = self.get_or_create(mapped_class, **query_dict)
         self.update_object(unique_object, **update_dict)
         return unique_object
