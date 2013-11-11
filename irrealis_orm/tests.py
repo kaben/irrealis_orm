@@ -206,6 +206,10 @@ class TestGetOrCreateUniqueObject(unittest.TestCase):
         with self.assertRaises(MultipleResultsFound):
           self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
 
+    def test_attribute_error(self):
+        with self.assertRaises(AttributeError):
+          thing1 = self.orm.get_or_create(self.orm.Thing, nonsense_attribute="Color of the sky")
+
 
 class TestUpdateObject(unittest.TestCase):
     '''
