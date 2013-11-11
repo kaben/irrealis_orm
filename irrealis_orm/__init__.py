@@ -161,13 +161,9 @@ class ORM(object):
           self.session.add(unique_object)
           return unique_object
 
-    def update_object(self, obj, **keyword_args):
+    def _update_object(self, obj, **keyword_args):
         '''
-        Update an object using keyword arguments.
-
-        Use:
-        >>> x = orm.get_or_create(orm.Thing, name="Rumplestiltskin")
-        >>> orm.update_object(x, attribute="Sneakiness")
+        Internal convenience function to update an object using keyword arguments.
         '''
         for key in keyword_args:
           if not hasattr(obj, key):
@@ -183,5 +179,5 @@ class ORM(object):
         >>> x = orm.get_or_create_and_update(orm.Thing, dict(name="Rumplestiltskin"), dict(attribute="Sneakiness"))
         '''
         unique_object = self.get_or_create(mapped_class, **query_dict)
-        self.update_object(unique_object, **update_dict)
+        self._update_object(unique_object, **update_dict)
         return unique_object

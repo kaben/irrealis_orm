@@ -48,7 +48,7 @@ class TestORM(unittest.TestCase):
     
     def exercise_orm(self, orm):
         '''
-        Tests a database-mapped ORM.
+        Tests a database-mapped ORM on behalf of various unit tests.
         '''
         user = orm.User(name = u"Name", fullname = u"Full Name")
         address = orm.Address(email = u"full.name@domain.com", user = user)
@@ -90,6 +90,37 @@ class TestORM(unittest.TestCase):
         )
         orm = ORM(orm_defs, 'sqlite:///:memory:', deferred_reflection = False)
         self.exercise_orm(orm)
+
+
+class TestLoadUnmappedTables(unittest.TestCase):
+    '''
+    Tests whether ORM initialization loads metadata for tables that haven't
+    been explicitly mapped to Python classes, when database reflection is used.
+
+    This makes it possible to use unmapped association tables for complex
+    relations between mapped classes.  See test case TestManyToManySelf for an
+    example of this.
+    '''
+    def test_unmapped_tables_loaded(self):
+        metadata = MetaData()
+        Table("things", metadata,
+          Column("id", Integer, primary_key=True),
+          Column("name", Text),
+        )
+        Table("more_things", metadata,
+          Column("id", Integer, primary_key=True),
+          Column("name", Text),
+        )
+        engine = create_engine('sqlite:///:memory:')
+        metadata.create_all(engine)
+        orm_defs = dict(
+          Thing = dict(
+            __tablename__ = "things",
+          )
+        )
+        orm = ORM(orm_defs, engine)
+        self.assertTrue(u"more_things" in orm.Base.metadata.tables)
+
 
 
 class TestManyToManySelf(unittest.TestCase):
@@ -189,33 +220,56 @@ class TestGetOrCreateUniqueObject(unittest.TestCase):
         self.orm = ORM(orm_defs, 'sqlite:///:memory:', deferred_reflection = False)
 
     def test_create_unique(self):
+        # Create a unique Thing object identified by name "Rumplestiltskin".
         self.assertEqual(0, self.orm.session.query(self.orm.Thing).count())
         thing1 = self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
         self.assertEqual(1, self.orm.session.query(self.orm.Thing).count())
+        # Retrieve the Thing object uniquely identified by name "Rumplestiltskin".
         thing2 = self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
         self.assertEqual(1, self.orm.session.query(self.orm.Thing).count())
+        # Verify that the created and the retrieved objects are the same thing.
         self.assertEqual(thing1, thing2)
 
     def test_error_on_nonunique(self):
+        # Create a unique Thing object identified by name "Rumplestiltskin.
         self.assertEqual(0, self.orm.session.query(self.orm.Thing).count())
         thing1 = self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
         self.assertEqual(1, self.orm.session.query(self.orm.Thing).count())
+        # Create a second Thing object identified by the same name.
         thing2 = self.orm.Thing(name="Rumplestiltskin")
         self.orm.session.add(thing2)
         self.orm.session.commit()
+        # Since things are no longer uniquely identified by name
+        # "Rumplestiltskin", get_or_create(...) should fail if we try to
+        # uniquly identify a thing by name "Rumplestiltskin.
         with self.assertRaises(MultipleResultsFound):
           self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
 
     def test_attribute_error(self):
+        # Can't uniquely identify a Thing object with nonsense attributes.
         with self.assertRaises(AttributeError):
           thing1 = self.orm.get_or_create(self.orm.Thing, nonsense_attribute="Color of the sky")
+        # Nearby negative control
+        thing1 = self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
 
 
-class TestUpdateObject(unittest.TestCase):
+class TestGetOrCreateAndUpdate(unittest.TestCase):
     '''
-    Tests and demonstrates ORM.update_object(self, obj, **keyword_args).
+    Tests and demonstrates ORM.get_or_create_and_update(self, mapped_class, query_dict, update_dict).
 
-    update_object(...) updates obj's attributes/values corresponding to
+    get_or_create_and_update(...) tries to retrieve or create a unique
+    mapped_class object identified by attributes in query dict; then tries to
+    update this object with attributes in update_dict; and if successful,
+    returns the object.
+
+    get_or_create_and_update(...) uses get_or_create(...) and
+    _update_object(...), which raise exceptions when query_dict identifies more
+    than one object, or when invalid attributes are specified.
+
+    Also tests and demonstrates internal convenience method
+    ORM._update_object(self, obj, **keyword_args).
+
+    _update_object(...) updates obj's attributes/values corresponding to
     **keyword_args. It checks each keyword to make sure the object has an
     attribute of the same name; if not, the exception AttributeError is raised.
     '''
@@ -229,74 +283,34 @@ class TestUpdateObject(unittest.TestCase):
           ),
         )
         self.orm = ORM(orm_defs, 'sqlite:///:memory:', deferred_reflection = False)
-        self.thing = self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
+        self.thing = self.orm.get_or_create(self.orm.Thing, name="Mary Quite Contrary")
 
     def test_update_object(self):
-        self.orm.update_object(self.thing, attribute="Sneakiness")
-        thing2 = self.orm.get_or_create(self.orm.Thing, name="Rumplestiltskin")
+        self.orm._update_object(self.thing, attribute="Sneakiness")
+        thing2 = self.orm.get_or_create(self.orm.Thing, name="Mary Quite Contrary")
         self.assertEqual(thing2.attribute, "Sneakiness")
         
     def test_nonsense_update_raises(self):
+        # Verify AttributeError is raised upon update of nonsense attribute.
         with self.assertRaises(AttributeError):
-          self.orm.update_object(self.thing, tie_color="Blue")
+          self.orm._update_object(self.Thing, nonsense_attribute="Blue")
+        # Nearby negative control
+        self.orm._update_object(self.thing, attribute="Deceptive")
         
-
-class TestGetOrCreateAndUpdate(unittest.TestCase):
-    '''
-    Tests and demonstrates ORM.get_or_create_and_update(self, mapped_class, query_dict, update_dict).
-
-    get_or_create_and_update(...) tries to retrieve or create a unique
-    mapped_class object identified by attributes in query dict; then tries to
-    update this object with attributes in update_dict; and if successful,
-    returns the object.
-
-    get_or_create_and_update(...) uses get_or_create(...) and
-    update_object(...), which raise exceptions when query_dict identifies more
-    than one object, or when invalid attributes are specified.
-    '''
-    def setUp(self):
-        orm_defs = dict(
-          Thing = dict(
-            __tablename__ = 'thing',
-            id = Column('id', Integer, primary_key = True),
-            name = Column('name', Text),
-            attribute = Column('attribute', Text),
-          ),
-        )
-        self.orm = ORM(orm_defs, 'sqlite:///:memory:', deferred_reflection = False)
-
     def test_get_or_create_and_update(self):
         query_dict = dict(name="Rumplestiltskin")
         update_dict_1 = dict(attribute="Sneakiness")
         update_dict_2 = dict(attribute="Meanness")
+        # Run get_or_create_and_update(...) twice, with identical query dict to
+        # uniquely determine object, but with two different update dicts.
         thing_1 = self.orm.get_or_create_and_update(self.orm.Thing, query_dict, update_dict_1)
         self.assertEqual(thing_1.attribute, "Sneakiness")
         thing_2 = self.orm.get_or_create_and_update(self.orm.Thing, query_dict, update_dict_2)
-        self.assertEqual(thing_2.attribute, "Meanness")
+        # After second call, attribute should have changed, but thing1 and
+        # thing2 should still be the unique object identified by name
+        # "Rumplestiltskin.
+        self.assertEqual(thing_1.attribute, "Meanness")
         self.assertEqual(thing_1, thing_2)
-
-
-class TestLoadUnmappedTables(unittest.TestCase):
-    def test_unmapped_tables_loaded(self):
-        metadata = MetaData()
-        Table("things", metadata,
-          Column("id", Integer, primary_key=True),
-          Column("name", Text),
-        )
-        Table("more_things", metadata,
-          Column("id", Integer, primary_key=True),
-          Column("name", Text),
-        )
-        engine = create_engine('sqlite:///:memory:')
-        metadata.create_all(engine)
-        orm_defs = dict(
-          Thing = dict(
-            __tablename__ = "things",
-          )
-        )
-        orm = ORM(orm_defs, engine)
-        self.assertTrue(u"more_things" in orm.Base.metadata.tables)
-
 
 
 if __name__ == "__main__": unittest.main()
