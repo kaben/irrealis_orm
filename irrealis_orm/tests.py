@@ -6,6 +6,9 @@ from sqlalchemy.orm.exc import MultipleResultsFound
 import unittest
 
 class TestORM(unittest.TestCase):
+    '''
+    Unit tests of ORM core functionality.
+    '''
     def setUp(self):
         '''
         Creates a test SQLAlchemy database engine with a simple in-memory
@@ -90,22 +93,20 @@ class TestORM(unittest.TestCase):
 
 
 class TestManyToManySelf(unittest.TestCase):
+    '''
+    Demo setup and use of self-referential many-to-many relationship
+    
+    A self-referential many-to-many relationship is one of the more complicated
+    things one might try to do when constructing relational mappings. Setup is
+    similar, but less-complicated, for other kinds of relationships:
+    - Many-to-many (non-self-referential)
+    - Many-to-one or one-to-many (self-referential or non-self-referential)
+    - One-to-one (self-referential or non-self-referential)
+
+    Since their setup is similar, this demo should help you with all of the
+    above situations.
+    '''
     def test_demo_self_referential_many_to_many_relationship(self):
-        '''
-        Demo setup and use of self-referential many-to-many relationship
-        
-        A self-referential many-to-many relationship is one of the more
-        complicated things one might try to do when constructing relational
-        mappings. Setup is similar, but less-complicated, for other kinds of
-        relationships:
-        - Many-to-many (non-self-referential)
-        - Many-to-one or one-to-many (self-referential or non-self-referential)
-        - One-to-one (self-referential or non-self-referential)
-
-        Since their setup is similar, this demo should help you with all of the
-        above situations.
-        '''
-
         # First, setup the database tables.
         metadata = MetaData()
         Table("things", metadata,
@@ -169,6 +170,14 @@ class TestManyToManySelf(unittest.TestCase):
 
 
 class TestGetOrCreateUniqueObject(unittest.TestCase):
+    '''
+    Tests and demonstrates ORM.get_or_create(self, mapped_class, **keyword_args).
+
+    get_or_create(...) tries to retrieve and return a single object of type
+    mapped_class, uniquely identified by **keyword_args. If no such object can
+    be found, one will be created. If **keyword_args identify multiple objects,
+    the exception sqlalchemy.orm.exc.MultipleResultsFound is raised.
+    '''
     def setUp(self):
         orm_defs = dict(
           Thing = dict(
@@ -199,6 +208,13 @@ class TestGetOrCreateUniqueObject(unittest.TestCase):
 
 
 class TestUpdateObject(unittest.TestCase):
+    '''
+    Tests and demonstrates ORM.update_object(self, obj, **keyword_args).
+
+    update_object(...) updates obj's attributes/values corresponding to
+    **keyword_args. It checks each keyword to make sure the object has an
+    attribute of the same name; if not, the exception AttributeError is raised.
+    '''
     def setUp(self):
         orm_defs = dict(
           Thing = dict(
@@ -222,6 +238,18 @@ class TestUpdateObject(unittest.TestCase):
         
 
 class TestGetOrCreateAndUpdate(unittest.TestCase):
+    '''
+    Tests and demonstrates ORM.get_or_create_and_update(self, mapped_class, query_dict, update_dict).
+
+    get_or_create_and_update(...) tries to retrieve or create a unique
+    mapped_class object identified by attributes in query dict; then tries to
+    update this object with attributes in update_dict; and if successful,
+    returns the object.
+
+    get_or_create_and_update(...) uses get_or_create(...) and
+    update_object(...), which raise exceptions when query_dict identifies more
+    than one object, or when invalid attributes are specified.
+    '''
     def setUp(self):
         orm_defs = dict(
           Thing = dict(
